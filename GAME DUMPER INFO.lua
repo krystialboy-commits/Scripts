@@ -2,111 +2,34 @@ local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerStorage = game:GetService("ServerStorage")
 local StarterGui = game:GetService("StarterGui")
 local StarterPack = game:GetService("StarterPack")
 local StarterPlayer = game:GetService("StarterPlayer")
 local SoundService = game:GetService("SoundService")
 local Teams = game:GetService("Teams")
 local Workspace = game:GetService("Workspace")
-local UserInputService = game:GetService("UserInputService")
 local MarketplaceService = game:GetService("MarketplaceService")
 local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "AdvancedDumperGui"
-screenGui.ResetOnSpawn = false
-screenGui.Parent = playerGui
+local Screengui = Instance.new("ScreenGui")
+Screengui.Name = "Screengui"
+Screengui.ResetOnSpawn = false
+Screengui.Parent = playerGui
 
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 380, 0, 280)
-frame.Position = UDim2.new(0.5, -190, 0.5, -140)
-frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-frame.BorderSizePixel = 0
-frame.Active = true
-frame.Parent = screenGui
-
-local dragging, dragInput, dragStart, startPos
-frame.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = true
-		dragStart = input.Position
-		startPos = frame.Position
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-			end
-		end)
-	end
-end)
-
-frame.InputChanged:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-		dragInput = input
-	end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-	if input == dragInput and dragging then
-		local delta = input.Position - dragStart
-		frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-	end
-end)
-
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 8)
-corner.Parent = frame
-
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 30)
-title.BackgroundTransparency = 1
-title.Text = "Advanced File & Clipboard Dumper"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.TextSize = 15
-title.Font = Enum.Font.GothamBold
-title.Parent = frame
-
-local statusLabel = Instance.new("TextLabel")
-statusLabel.Size = UDim2.new(1, 0, 0, 25)
-statusLabel.Position = UDim2.new(0, 0, 0, 32)
-statusLabel.BackgroundTransparency = 1
-statusLabel.Text = "Status: Idle"
-statusLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
-statusLabel.TextSize = 13
-statusLabel.Font = Enum.Font.GothamMedium
-statusLabel.Parent = frame
-
-local textBox = Instance.new("TextBox")
-textBox.Size = UDim2.new(0.9, 0, 0, 100)
-textBox.Position = UDim2.new(0.05, 0, 0, 65)
-textBox.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
-textBox.TextColor3 = Color3.fromRGB(150, 255, 150)
-textBox.Text = "Ready to dump..."
-textBox.TextSize, textBox.TextWrapped, textBox.ClearTextOnFocus = 11, true, false
-textBox.Font = Enum.Font.Code
-textBox.TextXAlignment, textBox.TextYAlignment = Enum.TextXAlignment.Left, Enum.TextYAlignment.Top
-textBox.Parent = frame
-
-local boxCorner = Instance.new("UICorner")
-boxCorner.CornerRadius = UDim.new(0, 6)
-boxCorner.Parent = textBox
-
-local button = Instance.new("TextButton")
-button.Size = UDim2.new(0.9, 0, 0, 45)
-button.Position = UDim2.new(0.05, 0, 0, 175)
-button.BackgroundColor3 = Color3.fromRGB(0, 162, 255)
-button.TextColor3 = Color3.fromRGB(255, 255, 255)
-button.Text = "Dump Game & Save File"
-button.TextSize = 15
-button.Font = Enum.Font.GothamBold
-button.Parent = frame
-
-local btnCorner = Instance.new("UICorner")
-btnCorner.CornerRadius = UDim.new(0, 6)
-btnCorner.Parent = button
+local text = Instance.new("TextLabel")
+text.Name = "text"
+text.Size = UDim2.new(1, 0, 0, 50)
+text.Position = UDim2.new(0, 0, 0, 20)
+text.BackgroundTransparency = 1
+text.Text = "NOTE DUMPER BY @wifikaney - DUMPING GAME TO NOTE... (0.0s)"
+text.TextColor3 = Color3.fromRGB(255, 255, 255)
+text.TextStrokeTransparency = 0.5
+text.TextSize = 22
+text.Font = Enum.Font.GothamBold
+text.Parent = Screengui
 
 local function getGameInfo()
 	local info = {
@@ -154,7 +77,7 @@ end
 
 local function serialize(obj, depth)
 	depth = depth or 0
-	if depth > 12 or obj == screenGui then return nil end
+	if depth > 12 or obj == Screengui then return nil end
 	
 	local success, name = pcall(function() return obj.Name end)
 	local successClass, className = pcall(function() return obj.ClassName end)
@@ -198,6 +121,13 @@ local function serialize(obj, depth)
 			t.Properties.TextColor3 = serializeValue(obj.TextColor3)
 			t.Properties.Size = serializeValue(obj.Size)
 			t.Properties.Position = serializeValue(obj.Position)
+		elseif obj:IsA("LocalScript") or obj:IsA("Script") or obj:IsA("ModuleScript") then
+			local sourceSuccess, source = pcall(function() return obj.Source end)
+			if sourceSuccess and source and source ~= "" then
+				t.Properties.Source = serializeValue(source)
+			else
+				t.Properties.Source = "\"-- [Empty or Restricted Script Source]\""
+			end
 		end
 	end)
 
@@ -211,6 +141,14 @@ local function serialize(obj, depth)
 				local serializedChild = serialize(child, depth + 1)
 				if serializedChild then
 					table.insert(t.Children, serializedChild)
+				else
+					table.insert(t.Children, {
+						Name = child.Name or "Unknown",
+						ClassName = child.ClassName or "Instance",
+						Properties = {},
+						Attributes = {},
+						Children = {}
+					})
 				end
 			end
 			if depth == 0 then
@@ -269,85 +207,85 @@ local function instanceTableToString(tbl, indent)
 	return result
 end
 
-button.MouseButton1Click:Connect(function()
-	button.Enabled = false
+task.spawn(function()
 	local startTime = tick()
 	local timerRunning = true
 
 	task.spawn(function()
 		while timerRunning do
 			local elapsed = tick() - startTime
-			statusLabel.Text = string.format("DUMPING GAME TO NOTE... (%.1fs)", elapsed)
+			text.Text = string.format("NOTE DUMPER BY @wifikaney - DUMPING GAME TO NOTE... (%.1fs)", elapsed)
 			task.wait(0.1)
 		end
 	end)
 
-	task.spawn(function()
-		local gameInfo = getGameInfo()
-		local servicesToDump = {
-			Workspace = Workspace,
-			ReplicatedStorage = ReplicatedStorage,
-			Lighting = Lighting,
-			SoundService = SoundService,
-			StarterGui = StarterGui,
-			StarterPack = StarterPack,
-			StarterPlayer = StarterPlayer,
-			Teams = Teams,
-			CoreGui = CoreGui
-		}
+	local gameInfo = getGameInfo()
+	local servicesToDump = {
+		Workspace = Workspace,
+		ReplicatedStorage = ReplicatedStorage,
+		Lighting = Lighting,
+		SoundService = SoundService,
+		StarterGui = StarterGui,
+		StarterPack = StarterPack,
+		StarterPlayer = StarterPlayer,
+		Teams = Teams,
+		CoreGui = CoreGui
+	}
 
-		local allData = {}
-		allData.GameInfo = gameInfo
+	local allData = {}
+	allData.GameInfo = gameInfo
 
-		for name, service in pairs(servicesToDump) do
-			local success, result = pcall(function()
-				return serialize(service, 0)
-			end)
-			if success and result then
-				allData[name] = result
-			end
-			task.wait()
+	for name, service in pairs(servicesToDump) do
+		local success, result = pcall(function()
+			return serialize(service, 0)
+		end)
+		if success and result then
+			allData[name] = result
+		else
+			allData[name] = {
+				Name = name,
+				ClassName = "Folder",
+				Properties = {},
+				Attributes = {},
+				Children = {}
+			}
 		end
+		task.wait()
+	end
 
-		local codeSuccess, resultText = pcall(function()
-			local code = "local gameDumpNote = {\n"
-			code = code .. "  GameInfo = " .. tableToString(allData.GameInfo, "  ") .. ",\n"
-			for serviceName, data in pairs(allData) do
-				if serviceName ~= "GameInfo" and data then
-					code = code .. "  " .. serviceName + " = " .. instanceTableToString(data, "  ") .. ",\n" -- fixed concatenation
-				end
+	local codeSuccess, resultText = pcall(function()
+		local code = "local gameDumpNote = {\n"
+		code = code .. "  GameInfo = " .. tableToString(allData.GameInfo, "  ") .. ",\n"
+		for serviceName, data in pairs(allData) do
+			if serviceName ~= "GameInfo" and data then
+				code = code .. "  " .. serviceName .. " = " .. instanceTableToString(data, "  ") .. ",\n"
 			end
-			code = code .. "}\nreturn gameDumpNote"
-			return code
+		end
+		code = code .. "}\nreturn gameDumpNote"
+		return code
+	end)
+
+	timerRunning = false
+
+	if codeSuccess and resultText then
+		text.Text = "NOTE DUMPER BY @wifikaney - Copied to Clipboard & Saved to Workspace!"
+		text.TextColor3 = Color3.fromRGB(0, 255, 100)
+		
+		pcall(function()
+			setclipboard(resultText)
 		end)
 
-		timerRunning = false
+		pcall(function()
+			if writefile then
+				writefile("GameDumpNote.lua", resultText)
+			end
+		end)
+	else
+		text.Text = "NOTE DUMPER BY @wifikaney - Dump Failed!"
+		text.TextColor3 = Color3.fromRGB(255, 50, 50)
+	end
 
-		if codeSuccess and resultText then
-			textBox.Text = resultText
-			textBox:CaptureFocus()
-			
-			pcall(function()
-				setclipboard(resultText)
-			end)
-
-			pcall(function()
-				if writefile then
-					writefile("GameDumpNote.lua", resultText)
-				end
-			end)
-
-			statusLabel.Text = "Status: Copied to Clipboard & Saved to Workspace!"
-			statusLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
-			button.Text = "Copied to Clipboard!"
-		else
-			statusLabel.Text = "Status: Dump Failed!"
-			statusLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
-			button.Text = "Failed"
-		end
-
-		task.wait(3)
-		button.Text = "Dump Game & Save File"
-		button.Enabled = true
+	task.delay(4, function()
+		Screengui:Destroy()
 	end)
 end)
